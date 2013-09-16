@@ -1,4 +1,13 @@
 (ns cfpb.qu.env
+  "This namespace is the access point to the external configuration,
+which is set via environment variables, Java properties, or a
+configuration file.
+
+See the `default-env` for the default environment setup. These may be
+overridden via your `project.clj` or environment variables. If the
+environment variable QU_CONFIG is set with a configuration file (in
+Clojure, as a map like `default-env`), the values in that
+configuration file override everything else."
   (:require [clojure.string :as str]
             [clojure.java.io :as io]
             [environ.core :as environ]))
