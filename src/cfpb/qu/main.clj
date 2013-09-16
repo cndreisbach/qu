@@ -1,4 +1,6 @@
 (ns cfpb.qu.main
+  "Entry point into qu. This starts up the web server as well as a
+query cache worker thread."
   (:gen-class
    :main true)
   (:require
@@ -37,13 +39,6 @@
       wrap-etag
       wrap-convert-extension-to-accept-header))
 
-(defn init
-  []
-  (let [dev (:dev env)]
-    (when dev
-      (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
-    (logging/config)))
-
 (defn setup-statsd
   "Setup statsd to log metrics. Requires :statsd-host and :statsd-port
   to be in the project.clj file."
@@ -58,24 +53,28 @@
         worker (qc/create-worker cache)]
     (qc/start-worker worker)))
 
+(defn- turn-off-stencil-cache
+  []
+  (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
+
 (defn -main
   [& args]
-  (ensure-mongo-connection)  
-  (init)
-  (when (env :statsd-host)
-    (setup-statsd))
-  (let [handler (if (:dev env)
-                  (-> app
-                      reload/wrap-reload
-                      wrap-stacktrace)
-                  app)
-        options {:ip (:http-ip env)
-                 :port (->int (:http-port env))
-                 :thread (->int (:http-threads env))
-                 :queue-size (->int (:http-queue-size env))}]
-    (log/info "Starting server on" (str (:ip options) ":" (:port options)))
-    (when (:dev env)
-      (log/info "Dev mode enabled"))
-    (start-cache-worker)
-    (run-server handler options)))
+  (let [dev (:dev env)]
+    (logging/config)
+    (ensure-mongo-connection)
+    (when dev (turn-off-stencil-cache))
+    (when (env :statsd-host) (setup-statsd))
+    (let [handler (if dev
+                    (-> app
+                        reload/wrap-reload
+                        wrap-stacktrace)
+                    app)
+          options {:ip (:http-ip env)
+                   :port (->int (:http-port env))
+                   :thread (->int (:http-threads env))
+                   :queue-size (->int (:http-queue-size env))}]
+      (log/info "Starting server on" (str (:ip options) ":" (:port options)))
+      (when dev (log/info "Dev mode enabled"))
+      (start-cache-worker)
+      (run-server handler options))))
 
