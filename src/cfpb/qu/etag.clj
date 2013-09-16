@@ -1,11 +1,14 @@
 (ns cfpb.qu.etag
+  "Calculate etags and wrap Ring to utilize them."
   (:require [clojure.string :as str]
             digest
             [taoensso.timbre :as log])
   (:import (java.io File)))
 
 (defmulti calculate-etag class)
-(defmethod calculate-etag String [s] (digest/md5 s))
+(defmethod calculate-etag String
+  [s]
+  (digest/md5 s))
 (defmethod calculate-etag File
   [f]
   (str (.lastModified f) "-" (.length f)))
@@ -26,13 +29,13 @@ supported for string bodies). If the request includes a matching
            {etag "ETag"} :headers
            :as resp} (handler req)
            if-none-match (get-in req [:headers "if-none-match"])]
-      (if (and etag (not= status 304))        
+      (if (and etag (not= status 304))
         (if (= etag if-none-match)
           (not-modified-response etag)
           resp)
         (if (and (or (string? body) (instance? File body))
                  (= status 200))
-          (let [etag (calculate-etag body)]            
+          (let [etag (calculate-etag body)]
             (if (= etag if-none-match)
               (not-modified-response etag)
               (assoc-in resp [:headers "ETag"] etag)))
