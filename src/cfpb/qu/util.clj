@@ -7,6 +7,12 @@
   [& args]
   (str/join (map name args)))
 
+(defn text?
+  "Is it text?"
+  [text]
+  (or (string? text)
+      (symbol? text)))
+
 (defn apply-kw
   "Like apply, but f takes keyword arguments and the last argument is
   not a seq but a map with the arguments for f."

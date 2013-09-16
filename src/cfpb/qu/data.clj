@@ -5,7 +5,7 @@ after retrieval."
   (:require [taoensso.timbre :as log]
             [clojure.string :as str]
             [clojure.walk :refer [postwalk]]
-            [clojure.core.cache :as cache]            
+            [clojure.core.cache :as cache]
             [cfpb.qu.util :refer :all]
             [cfpb.qu.logging :refer [log-with-time]]
             [cfpb.qu.env :refer [env]]
@@ -30,34 +30,37 @@ after retrieval."
                         (.toCharArray password))))
 
 (defn connect-mongo
-  []
-  (let [uri (env :mongo-uri)
-        hosts (env :mongo-hosts)
-        host (env :mongo-host)
-        port (->int (env :mongo-port))
-        options (apply-kw mongo/mongo-options (env :mongo-options {}))
-        auth (env :mongo-auth)
-        connection 
+  "Connect to MongoDB using information passed in. You will likely use
+  `ensure-mongo-connection` instead, which uses environment variables
+  for this info."
+  [{:keys [mongo-uri mongo-hosts mongo-host mongo-port mongo-options mongo-auth]
+    :or {mongo-options {}}}]
+  (let [mongo-port (->int mongo-port)
+        mongo-options (apply-kw mongo/mongo-options mongo-options)
+        connection
         (cond
-         uri (try (mongo/connect-via-uri! uri)
+         mongo-uri (try (mongo/connect-via-uri! mongo-uri)
                   (catch Exception e
                     (log/error "The Mongo URI specified is invalid.")))
-         hosts (let [addresses (map #(apply mongo/server-address %) hosts)]
-                 (mongo/connect! addresses options))
-         :else (mongo/connect! (mongo/server-address host port) options))]
-    (if (map? auth)
-      (authenticate-mongo auth))
+         mongo-hosts (let [addresses (map #(apply mongo/server-address %) mongo-hosts)]
+                       (mongo/connect! addresses mongo-options))
+         :else (mongo/connect! (mongo/server-address mongo-host mongo-port) mongo-options))]
+    (if (map? mongo-auth)
+      (authenticate-mongo mongo-auth))
     connection))
 
 (defn disconnect-mongo
+  "Disconnect from Mongo if connected."
   []
   (when (bound? #'mongo/*mongodb-connection*)
     (mongo/disconnect!)))
 
 (defn ensure-mongo-connection
+  "Connect to Mongo if not connected. Use environment variables to
+  populate the needed info."
   []
   (when-not (bound? #'mongo/*mongodb-connection*)
-    (connect-mongo)))
+    (connect-mongo env)))
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
@@ -86,6 +89,7 @@ stored in a Mongo database called 'metadata'."
   (concat (:dimensions slicedef) (:metrics slicedef)))
 
 (defn concept-collection [concept]
+  "Get the collection name for a concept."
   (str "concept__" (name concept)))
 
 (defn concept-data
@@ -112,10 +116,6 @@ stored in a Mongo database called 'metadata'."
 
 (defn- strip-id [data]
   (map #(dissoc % :_id) data))
-
-(defn- text? [text]
-  (or (string? text)
-      (symbol? text)))
 
 (defn get-find
   "Given a collection and a Mongo find map, return a Result of the form:
@@ -169,4 +169,3 @@ format."
   (map (fn [row]
          (map (fn [column]
                 (str (row (keyword column)))) columns)) data))
-
