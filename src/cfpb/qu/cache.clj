@@ -16,7 +16,7 @@ the same backing database have access to the same data."
             [clojure.core.cache :as cache :refer [defcache]]
             [clj-time.core :refer [now]]
             [clojure.edn :as edn]
-            [lonocloud.synthread :as ->]            
+            [lonocloud.synthread :as ->]
             [monger
              [db :as db]
              [core :as mongo :refer [with-db get-db]]
@@ -92,7 +92,7 @@ the same backing database have access to the same data."
   ([database query not-found]
      (with-db database
        (let [collection (query-to-key query)]
-         (if (coll/exists? collection)   
+         (if (coll/exists? collection)
            (extract-result collection query)
            not-found)))))
 
@@ -135,7 +135,7 @@ the same backing database have access to the same data."
          ;;   would not be added.
          ;; - The metadata is totally incidental and not used for consistency, so
          ;;   it can be removed after the work.
-         (coll/remove-by-id *work-collection* key)         
+         (coll/remove-by-id *work-collection* key)
          (coll/drop key)
          (coll/remove-by-id "metadata" key)))))
 
@@ -271,9 +271,7 @@ one of `query_cache` will be used."
   (let [worker-agent (agent worker
                             :error-mode :continue
                             :error-handler (fn [the-agent exception]
-                                             (log/warn "Error with cache worker" @the-agent)
-                                             (log/warn (.getMessage exception))
-                                             (log/warn "=== END EXCEPTION ===")
+                                             (log/warn exception "Error with cache worker")
                                              (send-off the-agent process-next-job)))]
     (send worker-agent #(assoc % :kill false))
     (send-off worker-agent process-next-job)))
