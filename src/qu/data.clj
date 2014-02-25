@@ -12,6 +12,8 @@ after retrieval."
             [qu.data.result :refer [->DataResult map->DataResult]]
             [qu.data.compression :as compression]
             [qu.data.definition :as definition]
+            [qu.data.source :as source]
+            [qu.data.mongo :as mongo-source :refer [->MongoSource]]
             [qu.metrics :as metrics]
             [cheshire.core :as json]
             [cheshire.generate :refer [add-encoder encode-str]]
@@ -30,19 +32,20 @@ after retrieval."
   "Get metadata for all datasets. Information about the datasets is
 stored in a Mongo database called 'metadata'."
   []
-  (with-db (get-db "metadata")
-    (coll/find-maps "datasets" {})))
+  (let [source (->MongoSource)]
+    (source/get-datasets source)))
 
 (defn get-dataset-names
   "List all datasets."
   []
-  (map :name (get-datasets)))
+  (let [source (->MongoSource)]
+    (map :name (source/get-datasets source))))
 
 (defn get-metadata
   "Get metadata for one dataset."
   [dataset]
-  (with-db (get-db "metadata")
-    (coll/find-one-as-map "datasets" {:name dataset})))
+  (let [source (->MongoSource)]
+    (source/get-metadata source dataset)))
 
 (defn slice-columns
   "Slices are made up of dimensions, columns that can be queried, and

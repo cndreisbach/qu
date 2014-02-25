@@ -2,7 +2,8 @@
   (:require
    [qu.logging :as logging]
    [qu.app.webserver :refer [new-webserver]]
-   [qu.app.mongo :refer [new-mongo]]
+   [qu.app.db :refer [new-db]]   
+   [qu.data.mongo :refer [->MongoSource]]   
    [qu.app.options :refer [inflate-options]]
    [qu.cache :as qc]
    [taoensso.timbre :as log]
@@ -36,21 +37,26 @@
       (qc/stop-worker worker-agent)
       component)))
 
+(def system-components [:log :db :api :cache-worker])
+
 (defrecord QuSystem [options api db log cache-worker]
   component/Lifecycle
 
   (start [system]
-    (let [system (component/start-system system [:log :db :api :cache-worker])]      
+    (let [system (component/start-system system system-components)]
       (log/info "Started with settings" (str options))
       system))
   
   (stop [system]
-    (component/stop-system system [:api :cache-worker :db :log])))
+    (component/stop-system system system-components)))
 
 (defn new-qu-system [options]
   (let [{:keys [http dev log mongo] :as options} (inflate-options options)]
     (map->QuSystem {:options options
-                    :db (new-mongo mongo)
+                    :db (new-db (assoc mongo :source (->MongoSource)))
                     :log (new-log log)
-                    :api (new-webserver http dev)
-                    :cache-worker (->CacheWorker)})))
+                    :cache-worker (->CacheWorker)
+                    :api (component/using
+                          (new-webserver (assoc http :dev dev))
+                          [:db
+                           :log])})))

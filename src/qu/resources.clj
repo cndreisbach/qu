@@ -21,6 +21,7 @@ functions to return the resource that will be presented later."
    [qu.project :refer [project]]
    [qu.urls :as urls]
    [qu.data :as data]
+   [qu.data.source :as ds]
    [qu.views :as views]
    [qu.query :as query :refer [params->Query]]))
 
@@ -37,7 +38,9 @@ functions to return the resource that will be presented later."
   index [webserver]
   :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
-  :exists? (fn [_] {:datasets (data/get-datasets)})
+  :exists? (fn [_]
+             (let [source (get-in webserver [:db :source])]
+               {:datasets (ds/get-datasets source)}))
   :etag (fn [{:keys [datasets representation]}]
           (digest/md5 (str (:media-type representation) (vec datasets))))
   :handle-ok (fn [{:keys [request representation datasets]}]
@@ -67,8 +70,10 @@ functions to return the resource that will be presented later."
   :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
-             (let [dataset (get-in request [:params :dataset])
-                   metadata (data/get-metadata dataset)]
+             (let [_ (log/info webserver)
+                   source (get-in webserver [:db :source])
+                   dataset (get-in request [:params :dataset])
+                   metadata (ds/get-metadata source dataset)]
                (if metadata
                  {:dataset dataset
                   :metadata metadata}
@@ -124,9 +129,10 @@ functions to return the resource that will be presented later."
   :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
-             (let [dataset (get-in request [:params :dataset])
+             (let [source (get-in webserver [:db :source])
+                   dataset (get-in request [:params :dataset])
                    concept (get-in request [:params :concept])                   
-                   metadata (data/get-metadata dataset)
+                   metadata (ds/get-metadata source dataset)
                    cdata (get-in metadata [:concepts (keyword concept)])]
                (if cdata
                  {:dataset dataset
@@ -161,8 +167,9 @@ functions to return the resource that will be presented later."
   :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
-             (let [dataset (get-in request [:params :dataset])
-                   metadata (data/get-metadata dataset)
+             (let [source (get-in webserver [:db :source])
+                   dataset (get-in request [:params :dataset])
+                   metadata (ds/get-metadata source dataset)
                    slice (get-in request [:params :slice])]
                (if-let [slicedef (get-in metadata [:slices (keyword slice)])]
                  {:dataset dataset
@@ -234,8 +241,9 @@ functions to return the resource that will be presented later."
   :available-media-types ["text/html" "text/csv" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
-             (let [dataset (get-in request [:params :dataset])
-                   metadata (data/get-metadata dataset)
+             (let [source (get-in webserver [:db :source])
+                   dataset (get-in request [:params :dataset])
+                   metadata (ds/get-metadata source dataset)
                    slice (get-in request [:params :slice])]
                (if-let [slicedef (get-in metadata [:slices (keyword slice)])]
                  {:dataset dataset

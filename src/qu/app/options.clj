@@ -6,10 +6,10 @@
 (def HttpOptionsS
   {:view {:api_name s/Str
           :base_url s/Str
-          :dev_mode s/Bool          
           (s/optional-key :build_number) s/Str
           (s/optional-key :build_url) s/Str
-          (s/optional-key :qu_version) s/Str}
+          (s/optional-key :qu_version) s/Str
+          s/Keyword s/Any}
    :ip s/Str
    :port s/Int
    :threads s/Int
@@ -30,7 +30,7 @@
                                        (s/one s/Str "password")]})}))
 
 (def OptionsS
-  {(s/optional-key :dev) s/Bool
+  {:dev s/Bool
    :log {(s/optional-key :file) s/Str
          :level s/Keyword}
    :mongo MongoOptionsS
