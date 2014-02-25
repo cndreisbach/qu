@@ -30,8 +30,8 @@
   "Create the entry point into the web API. We look for URI suffixes
   and strip them to set the Accept header before handing off the
   request to Compojure."
-  [webserver]
-  (let [handler (-> (create-app-routes webserver)
+  [api]
+  (let [handler (-> (create-app-routes api)
                     wrap-ignore-trailing-slash
                     wrap-keyword-params
                     wrap-nested-params
@@ -40,7 +40,7 @@
                     wrap-etag
                     wrap-convert-extension-to-accept-header
                     wrap-cors)]
-    (if (:dev webserver)
+    (if (:dev api)
       (-> handler
           reload/wrap-reload
           dev-stacktrace/wrap-stacktrace-web)
