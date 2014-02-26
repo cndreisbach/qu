@@ -1,6 +1,4 @@
 (ns qu.app.webserver
-  (:gen-class
-   :main true)
   (:require
    [qu
     [etag :refer [wrap-etag]]
