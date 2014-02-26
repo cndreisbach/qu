@@ -26,8 +26,8 @@ through Jetty, not through another web server."
    (GET slice-metadata-template [dataset slice] (resources/slice-metadata webserver))
    (GET "/data/:dataset/slice/:slice.:extension" [dataset slice] (resources/slice-query webserver))
    (GET slice-query-template [dataset slice] (resources/slice-query webserver))
-   (GET swagger-resource-listing-template [:as req] (swagger/resource-listing-json req))
-   (GET swagger-api-declaration-template [api :as req] (swagger/api-declaration-json api req))
+   (GET swagger-resource-listing-template [:as req] (swagger/resource-listing-json webserver req))
+   (GET swagger-api-declaration-template [api :as req] (swagger/api-declaration-json webserver api req))
    (route/resources "/static" {:root "static"})
    (route/not-found (resources/not-found))))
 

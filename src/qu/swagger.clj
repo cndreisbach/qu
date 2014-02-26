@@ -3,6 +3,7 @@
    [clojure.string :as str :refer [capitalize]]
    [qu.util :refer :all]
    [qu.data :as data]
+   [qu.data.source :as ds]
    [qu.urls :as urls]
    [ring.util.response :refer [not-found]]
    [lonocloud.synthread :as ->]
@@ -19,10 +20,11 @@
   (merge m {:basePath (base-url req)}))
 
 (defn resource-listing
-  [req]
-  (let [base-url (base-url req)]
+  [api req]
+  (let [source (get-in api [:db :source])
+        base-url (base-url req)]
     (route/with-base-url base-url
-      (let [datasets (data/get-datasets)
+      (let [datasets (ds/get-datasets source)
             dataset-descriptions {"hmda" "Operations about mortgage data"}
             dataset-apis (map #(into {} {:path (route/with-base-url base-url
                                                  (urls/swagger-api-declaration-url :api (:name %)))
@@ -79,8 +81,8 @@
       (base-path req)))
 
 (defn dataset-declaration
-  [dataset req]
-  (let [metadata (data/get-metadata dataset)
+  [datasource dataset req]
+  (let [metadata (ds/get-metadata datasource dataset)
         slices (sort (map name (keys (:slices metadata))))
         concepts (sort (map name (keys (:concepts metadata))))]
     (-> {:resourcePath (urls/dataset-path :dataset dataset)
@@ -157,9 +159,10 @@
   (json-response (resource-listing req)))
 
 (defn api-declaration-json
-  [api req]
-  (let [datasets (set (data/get-dataset-names))]
+  [server api req]
+  (let [datasets (set (data/get-dataset-names))
+        datasource (get-in server [:db :source])]
     (cond
      (= api "data") (json-response (data-declaration req))
-     (contains? datasets api) (json-response (dataset-declaration api req))
+     (contains? datasets api) (json-response (dataset-declaration datasource api req))
      :else (not-found ""))))
