@@ -6,14 +6,35 @@
             [qu.app :as app]
             [qu.app.webserver :as webserver]
             [qu.app.mongo :refer [new-mongo]]
+            [qu.data.source :as ds]
             [qu.loader :as loader]
             [com.stuartsierra.component :as component]))
 
+(defrecord MockSource [data]
+  ds/DataSource
+
+  (connect [source conn options auth] source)
+  (disconnect [source] source)
+  
+  (get-datasets [source]
+    (:datasets data []))
+  
+  (get-metadata [source dataset]
+    (get-in data [:datasets (keyword dataset)] {}))
+  
+  (get-concept-data [source dataset concept]
+    (get-in data [:concepts (keyword concept) :data] [])))
+
 (def port 4545)
 (def system (atom nil))
-(def app (webserver/get-handler false))
 (def test-options (-> (main/default-options)
                       (assoc-in [:http :port] port)))
+
+(defn mock-app
+  ([]
+     (mock-app {}))
+  ([datasource-map]
+     (webserver/get-handler {:db {:source (->MockSource datasource-map)}})))
 
 (defn system-setup
   [test]
@@ -34,8 +55,10 @@
       (component/stop mongo))))
 
 (defn GET
-  [url]
-  (app (mockreq/request :get url)))
+  ([url]
+     (GET url (mock-app)))
+  ([url app]
+     (app (mockreq/request :get url))))
 
 (defn does-contain [container contained]
   (let [container (if (sequential? container)
