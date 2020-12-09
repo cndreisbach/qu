@@ -1,4 +1,29 @@
 # Changelog
+
+## v1.1.13 - 2016-09-22
+
+ - Frontend improvements to pagination and limits for HTML format.
+ - Fixes SSL bug when retrieving dependencies.
+
+## v1.1.12 - 2016-04-08
+
+ - Lock down front-end dependencies using `npm shrinkwrap` (c962a27)
+
+## v1.1.11 - 2016-02-08
+
+ - Validate `$page` argument (a44a85b)
+ 
+## v1.1.10 - 2015-12-29
+
+ - Disables pagination links in HTML view when they should not be clickable (43516f9)
+ - No longer sends statsd metrics for responses with 4XX status codes (37e6d8a)
+
+## v1.1.7 - 2015-09-18
+
+### Added
+
+ - Do not escape html in dataset description text when browsing the html api
+ 
 ## v1.1.6 - 2015-07-27
 
 ### Added

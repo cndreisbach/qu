@@ -1,6 +1,15 @@
 # qu
 
-[![Build Status](https://travis-ci.org/cfpb/qu.png)](https://travis-ci.org/cfpb/qu)
+:warning: **This project was archived on September 25th, 2020 and is no longer maintained** :warning:
+
+
+---
+---
+---
+
+
+
+
 
 _qu_ is a data platform created to serve our public data sets. You can use it to serve your data sets, as well.
 
@@ -196,6 +205,20 @@ If you need to connect to several servers to read from multiple replica sets, se
 ```
 
 See [the Monger documentation for all available Mongo connection options](http://clojuremongodb.info/articles/connecting.html#connecting_to_mongodb_using_connection_options).
+
+#### StatsD
+
+The application can generate metrics related to its execution and send them to statsd. 
+
+However by default metrics publishing is disabled. To enable it you need to provide statsd hostname in the configuration file:
+
+```clojure
+{
+  :statsd-host "localhost"
+  ;; Standard statsd port
+  :statsd-port 8125
+}
+```
 
 #### App URL
 

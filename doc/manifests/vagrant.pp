@@ -53,7 +53,7 @@ package { "git":
   ensure => present,
 }
 
-package { "java-1.7.0-openjdk":
+package { "java-1.8.0-openjdk":
   ensure => present,
 }
 
@@ -69,7 +69,12 @@ file { "/usr/bin/lein":
   require => Exec["install leiningen"],
 }
 
+package{"nss":
+  ensure => "latest",
+}
+
 exec { 'install bower':
+  timeout => 1800,
   command => "/usr/bin/npm install -g bower",
   creates => "/usr/bin/bower",
   require => Package["npm"],
@@ -82,5 +87,6 @@ exec { 'install grunt':
 }
 
 service { "iptables":
-  ensure => "stopped"
+  ensure => "stopped",
+  enable => false,
 }

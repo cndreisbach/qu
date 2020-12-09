@@ -204,7 +204,7 @@
      {:key "where"    :label "Where"            :bootstrap_span 12     :tooltip_title "Where Clause"     :tooltip_body "Filters the result set via a subset of SQL syntax. Supports standard comparison and boolean operators. See the API documentation for more details." }
      {:key "group"    :label "Group By"         :bootstrap_span 6      :tooltip_title "Group By Clause"  :tooltip_body "As in SQL, projects rows with common values into a smaller set. Supports the aggregation functions SUM, MIN, MAX, and COUNT. Requires a select clause."}
      {:key "orderBy"  :label "Order By"         :bootstrap_span 6      :tooltip_title "Order By Clause"  :tooltip_body "A comma-delimited list of fields used to sort the result set. As with SQL, use DESC for descending order. If blank, the order will be consistent but unspecified."}
-     {:key "limit"    :label "Limit"            :bootstrap_span 1      :tooltip_title "Limit Clause"     :tooltip_body "The maximum number of results to return. Defaults to 100; the hard limit is 1000."}
+     {:key "limit"    :label "Limit"            :bootstrap_span 1      :tooltip_title "Limit Clause"     :tooltip_body "The maximum number of results to return. The HTML limit is fixed at 10,000, with 100 results shown per page. Other formats are not limited."}
      {:key "offset"   :label "Offset"           :bootstrap_span 1      :tooltip_title "Offset Clause"    :tooltip_body "Zero-based offset to start the result set from. Defaults to 0."}
      ])
 
@@ -239,18 +239,18 @@
           in-window? (fn [page]
                        (contains? (set window) page))
           pagination (map #(hash-map :page %
-                                     :class (when (= % current-page) "active")
+                                     :disabled (= % current-page)
                                      :href (href-for-page resource %))
                           window)]
       (-> pagination
           (conj {:page "Prev"
-                 :class (when (<= current-page 1) "disabled")
+                 :disabled (<= current-page 1)
                  :href (href-for-page resource (dec current-page))})
           (conj {:page "First"
-                 :class (when (in-window? 1) "disabled")
+                 :disabled (in-window? 1)
                  :href (href-for-page resource 1)})
           (concat [{:page "Next"
-                    :class (when (>= current-page total-pages) "disabled")
+                    :disabled (>= current-page total-pages)
                     :href (when (< current-page total-pages) (href-for-page resource (inc current-page)))}])))
     []))
 
@@ -297,7 +297,6 @@
                 dec)
         total (get-in resource [:properties :total])
         has-data? (>= (- end start) 0)
-        has-more-data? (> data-size 100)
         pagination (create-pagination resource)
         computing (get-in resource [:properties :computing])
         computing? (->bool computing)
@@ -319,7 +318,6 @@
                           :total total
                           :pagination pagination
                           :has-data? has-data?
-                          :has-more-data? has-more-data?
                           :computing? computing?
                           :computing computing
                           :data data})]
